@@ -1,19 +1,20 @@
 #include <iostream>
 #include <conio.h>
-#include <windows.h> // Used for the Sleep() function to control game speed
+#include <windows.h>
+#include <ctime>
 
 using namespace std;
 
 // Game variables
 bool gameOver;
-const int width = 20;
+const int width = 35;
 const int height = 20;
 int x, y, fruitX, fruitY, score;
 
-//Charector variables
+// Character variables
 char head = 'O';
-char tail ='o';
-char space =' ';
+char tail = 'o';
+char space = ' ';
 char wall = '#';
 char food = '*';
 
@@ -25,8 +26,16 @@ int nTail; // Length of the tail
 enum eDirection { STOP = 0, LEFT, RIGHT, UP, DOWN };
 eDirection dir;
 
+// Helper function to move cursor without clearing the screen (Fixes Flickering)
+void SetCursorPosition(int x, int y) {
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    COORD coord = { (SHORT)x, (SHORT)y };
+    SetConsoleCursorPosition(hOut, coord);
+}
+
 // 1. Setup the initial game state
 void Setup() {
+    srand(time(NULL)); // Seed random number generator
     gameOver = false;
     dir = STOP;
     x = width / 2;  // Start snake head in the center
@@ -39,8 +48,7 @@ void Setup() {
 
 // 2. Draw the game board in the console
 void Draw() {
-    // Clear the console window
-    system("cls"); 
+    SetCursorPosition(0, 0); // Reset cursor to top-left instead of system("cls")
 
     // Top wall
     for (int i = 0; i < width + 2; i++) cout << wall;
@@ -50,7 +58,7 @@ void Draw() {
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             // Left wall
-            if (j == 0) cout << wall; 
+            if (j == 0) cout << wall;
 
             // Draw Snake Head
             if (i == y && j == x) {
@@ -83,7 +91,7 @@ void Draw() {
     cout << endl;
 
     // Display Score
-    cout << "Score: " << score << endl;
+    cout << "Score: " << score << "   " << endl; // Extra spaces clear old characters
     cout << "Use W, A, S, D to move. Press X to exit." << endl;
 }
 
@@ -91,11 +99,11 @@ void Draw() {
 void Input() {
     if (_kbhit()) { // Checks if a keyboard key has been pressed
         switch (_getch()) {
-            case 'a': if (dir != RIGHT) dir = LEFT; break;
-            case 'd': if (dir != LEFT)  dir = RIGHT; break;
-            case 'w': if (dir != DOWN)  dir = UP; break;
-            case 's': if (dir != UP)    dir = DOWN; break;
-            case 'x': gameOver = true; break;
+        case 'a': if (dir != RIGHT) dir = LEFT; break;
+        case 'd': if (dir != LEFT)  dir = RIGHT; break;
+        case 'w': if (dir != DOWN)  dir = UP; break;
+        case 's': if (dir != UP)    dir = DOWN; break;
+        case 'x': gameOver = true; break;
         }
     }
 }
@@ -121,11 +129,11 @@ void Logic() {
 
     // Move the head based on direction
     switch (dir) {
-        case LEFT:  x--; break;
-        case RIGHT: x++; break;
-        case UP:    y--; break;
-        case DOWN:  y++; break;
-        default: break;
+    case LEFT:  x--; break;
+    case RIGHT: x++; break;
+    case UP:    y--; break;
+    case DOWN:  y++; break;
+    default: break;
     }
 
     // Wall collision checking
@@ -151,14 +159,27 @@ void Logic() {
 
 // 5. Main Loop
 int main() {
+    // Hide the console cursor for a cleaner look
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO cursorInfo;
+    GetConsoleCursorInfo(hConsole, &cursorInfo);
+    cursorInfo.bVisible = FALSE;
+    SetConsoleCursorInfo(hConsole, &cursorInfo);
+
     Setup();
     while (!gameOver) {
         Draw();
         Input();
         Logic();
-        Sleep(100); // Slows down the game loop (100 milliseconds)
+        Sleep(80); 
     }
-    
+
+    // Restore cursor before exiting
+    cursorInfo.bVisible = TRUE;
+    SetConsoleCursorInfo(hConsole, &cursorInfo);
+
+    system("cls");
     cout << "\nGAME OVER!" << endl;
+    cout << "Final Score: " << score << endl;
     return 0;
 }
